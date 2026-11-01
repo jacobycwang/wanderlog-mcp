@@ -4,8 +4,10 @@ import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolveDay } from "../resolvers/day.js";
 import type {
+  Airline,
   Block,
   ChecklistItem,
+  FlightStop,
   Geo,
   PlaceData,
   QuillDelta,
@@ -459,6 +461,32 @@ export function buildTransitBlock(
   return block as unknown as Block;
 }
 
+/** Mirrors the block the Wanderlog web app writes after a flightStops lookup (captured HAR). */
+export function buildFlightBlock(
+  userId: number,
+  args: {
+    airline: Airline;
+    flightNumber: number;
+    stop: FlightStop;
+    confirmationNumber?: string;
+    travelerNames?: string[];
+    notes?: string;
+  },
+): Block {
+  return {
+    id: generateBlockId(),
+    type: "flight",
+    flightInfo: { airline: args.airline, number: args.flightNumber },
+    depart: args.stop.depart,
+    arrive: args.stop.arrive,
+    addedBy: { type: "user", userId },
+    text: { ops: [{ insert: args.notes ? `${args.notes}\n` : "\n" }] },
+    travelerNames: args.travelerNames ?? [],
+    confirmationNumber: args.confirmationNumber ?? "",
+    attachments: [],
+  } as unknown as Block;
+}
+
 export function buildRentalCarBlock(
   userId: number,
   args: {
@@ -486,9 +514,10 @@ export function buildRentalCarBlock(
 }
 
 const TRANSIT_SECTION_META: Record<
-  "transit" | "rentalCars",
+  "flights" | "transit" | "rentalCars",
   { heading: string; placeMarkerIcon: string; placeMarkerColor: string }
 > = {
+  flights: { heading: "Flights", placeMarkerIcon: "plane", placeMarkerColor: "#3498db" },
   transit: { heading: "Transit", placeMarkerIcon: "subway", placeMarkerColor: "#17b978" },
   rentalCars: { heading: "Rental cars", placeMarkerIcon: "car", placeMarkerColor: "#38a4a6" },
 };
@@ -501,7 +530,7 @@ const TRANSIT_SECTION_META: Record<
  */
 export function sectionInsertOp(
   trip: TripPlan,
-  sectionType: "transit" | "rentalCars",
+  sectionType: "flights" | "transit" | "rentalCars",
   block: Block,
 ): Json0Op {
   const sections = trip.itinerary.sections;

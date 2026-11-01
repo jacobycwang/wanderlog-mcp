@@ -15,7 +15,7 @@ export const addTransitInputSchema = {
   trip_key: z.string().min(1).describe("The trip to add the transit leg to."),
   type: z
     .enum(["ferry", "bus", "train"])
-    .describe("Kind of transit reservation. Flights use their own flow; not here."),
+    .describe("Kind of transit reservation. For flights use wanderlog_add_flight."),
   carrier: z
     .string()
     .min(1)

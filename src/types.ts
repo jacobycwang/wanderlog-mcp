@@ -69,20 +69,35 @@ export type ChecklistBlock = {
 };
 
 export type AirportEndpoint = {
+  type?: "depart" | "arrive";
   date?: string;
   time?: string;
   airport?: {
     name?: string;
     iata?: string;
     cityName?: string;
+    googlePlace?: Record<string, unknown>;
   };
+};
+
+export type Airline = {
+  iata: string;
+  icao?: string;
+  name?: string;
+  localizedName?: string;
+};
+
+/** One leg from /api/flights/flightStops; stored verbatim as the block's depart/arrive. */
+export type FlightStop = {
+  depart: AirportEndpoint;
+  arrive: AirportEndpoint;
 };
 
 export type FlightBlock = {
   id: number;
   type: "flight";
   flightInfo?: {
-    airline?: { name?: string; iata?: string };
+    airline?: Partial<Airline>;
     number?: number | string;
   };
   depart?: AirportEndpoint;

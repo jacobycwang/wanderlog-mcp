@@ -6,6 +6,8 @@ import {
   WanderlogNotFoundError,
 } from "../errors.js";
 import type {
+  Airline,
+  FlightStop,
   Geo,
   GeoWithGoodGuides,
   GuidesForGeoResponse,
@@ -183,6 +185,32 @@ export class RestClient {
       throw new WanderlogNotFoundError("Place", placeId);
     }
     return env.data;
+  }
+
+  /** Returns [] when Wanderlog has no such flight on that date (it answers 200 + success:false). */
+  async getFlightStops(args: {
+    airlineIata: string;
+    flightNumber: number;
+    departDate: string;
+  }): Promise<FlightStop[]> {
+    const qs = new URLSearchParams({
+      airlineIata: args.airlineIata,
+      flightNumber: String(args.flightNumber),
+      departDate: args.departDate,
+    });
+    const env = await this.request<Envelope<{ data?: FlightStop[] }>>(
+      "GET",
+      `/api/flights/flightStops?${qs}`,
+    );
+    return env.success === false ? [] : (env.data ?? []);
+  }
+
+  async getAllAirlines(): Promise<Airline[]> {
+    const env = await this.request<Envelope<{ data?: Airline[] }>>(
+      "GET",
+      "/api/flights/allAirlines",
+    );
+    return env.data ?? [];
   }
 
   async geoAutocomplete(query: string): Promise<
