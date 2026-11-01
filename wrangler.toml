@@ -1,0 +1,18 @@
+name = "wanderlog-mcp"
+main = "src/worker/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Swap the Node `ws` package for a fetch()-based WebSocket shim
+[alias]
+"ws" = "./src/worker/ws-shim.ts"
+
+[define]
+__WANDERLOG_VERSION__ = '"0.3.2"'
+
+[observability]
+enabled = true
+
+# Optional non-secret overrides:
+# [vars]
+# WANDERLOG_DEFAULT_CURRENCY = "TWD"

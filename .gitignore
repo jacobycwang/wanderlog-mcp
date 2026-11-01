@@ -10,3 +10,5 @@ docs/
 evals/
 CLAUDE.md
 coverage/
+.wrangler/
+dist-worker/

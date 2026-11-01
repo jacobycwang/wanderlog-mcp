@@ -43,7 +43,9 @@
     "start:http": "node --env-file=.env dist/http.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy:worker": "wrangler deploy",
+    "dev:worker": "wrangler dev"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -62,6 +64,7 @@
     "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "wrangler": "^4.156.0"
   }
 }

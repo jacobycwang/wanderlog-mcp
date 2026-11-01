@@ -17,12 +17,20 @@ import { readFileSync } from "node:fs";
  * npm always includes package.json in the published tarball, so this is
  * available at runtime regardless of the `files` allowlist.
  */
-const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
-  version?: unknown;
-};
+declare const __WANDERLOG_VERSION__: string | undefined;
 
-if (typeof pkg.version !== "string" || pkg.version.length === 0) {
-  throw new Error("Could not read a version string from package.json");
+function readVersion(): string {
+  // The Cloudflare Workers build injects this via wrangler `define` (no filesystem there).
+  if (typeof __WANDERLOG_VERSION__ !== "undefined" && __WANDERLOG_VERSION__) {
+    return __WANDERLOG_VERSION__;
+  }
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    version?: unknown;
+  };
+  if (typeof pkg.version !== "string" || pkg.version.length === 0) {
+    throw new Error("Could not read a version string from package.json");
+  }
+  return pkg.version;
 }
 
-export const VERSION: string = pkg.version;
+export const VERSION: string = readVersion();
