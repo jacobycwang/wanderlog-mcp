@@ -63,7 +63,9 @@ export const searchHotelsInputSchema = {
       "ISO 4217 currency code for prices (e.g. 'INR', 'USD', 'ARS'). Optional. When provided, the shared session's currency preference is updated before searching so all returned prices are in this currency. When omitted, prices are returned in the session's existing currency and no global preference is changed.",
     ),
   price_range: z
-    .tuple([z.number().min(0), z.number().min(0)])
+    // Not z.tuple: its `items: [...]` JSON Schema makes ChatGPT reject the connector.
+    .array(z.number().min(0))
+    .length(2)
     .optional()
     .describe("[min, max] nightly price band in the response currency."),
   hotel_classes: z
