@@ -22,7 +22,7 @@ export interface Env {
   WANDERLOG_WS_BASE_URL?: string;
   WANDERLOG_USER_AGENT?: string;
   WANDERLOG_DEFAULT_CURRENCY?: string;
-  /** Optional: if set, clients must also send `X-Access-Key: <value>` (or ?key=). */
+  /** Optional: if set, clients must also send `X-API-Key` / `X-Access-Key: <value>` (or ?key=). */
   ACCESS_KEY?: string;
 }
 
@@ -85,7 +85,7 @@ export default {
     if (url.pathname !== "/mcp") return new Response("Not found", { status: 404 });
 
     if (env.ACCESS_KEY) {
-      const key = req.headers.get("x-access-key") ?? url.searchParams.get("key");
+      const key = req.headers.get("x-api-key") ?? req.headers.get("x-access-key") ?? url.searchParams.get("key");
       if (key !== env.ACCESS_KEY) return rpcError(401, "Invalid or missing access key.");
     }
 
