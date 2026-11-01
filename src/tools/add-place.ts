@@ -65,6 +65,13 @@ export const addPlaceInputSchema = {
     .regex(/^\d{2}:\d{2}$/, "must be HH:mm")
     .optional()
     .describe("Optional end time in HH:mm format (e.g. '11:30'). Only used with start_time."),
+  language: z
+    .string()
+    .regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/, "must be a language code like 'ja' or 'zh-TW'")
+    .optional()
+    .describe(
+      "Optional language code for the stored place name and address (e.g. 'ja', 'ko', 'zh-TW', 'fr'). Defaults to 'en'. Pass the destination's local language when the user wants native names — 'ja' stores 浅草寺 instead of Sensō-ji.",
+    ),
 };
 
 export const addPlaceDescription = `
@@ -97,6 +104,7 @@ type Args = {
   note?: string;
   start_time?: string;
   end_time?: string;
+  language?: string;
 };
 
 export async function addPlace(
@@ -113,7 +121,7 @@ export async function addPlace(
 
     let detail: PlaceData;
     if (args.place_id) {
-      detail = await ctx.rest.getPlaceDetails(args.place_id);
+      detail = await ctx.rest.getPlaceDetails(args.place_id, args.language);
     } else {
       const center = findTripCenter(entry.snapshot, entry.geos);
       if (!center) {
@@ -127,6 +135,7 @@ export async function addPlace(
         sessionToken: crypto.randomUUID(),
         location: { latitude: center.lat, longitude: center.lng },
         radius: 15000,
+        language: args.language,
       });
       if (predictions.length === 0) {
         throw new WanderlogError(
@@ -142,7 +151,7 @@ export async function addPlace(
         );
       }
       const topPrediction = predictions[0]!;
-      detail = await ctx.rest.getPlaceDetails(topPrediction.place_id);
+      detail = await ctx.rest.getPlaceDetails(topPrediction.place_id, args.language);
     }
     const imageKeys = await ctx.rest.getPlacePhotos(detail);
 
