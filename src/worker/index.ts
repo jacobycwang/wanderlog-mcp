@@ -77,6 +77,44 @@ async function buildContext(cookieRaw: string, env: Env): Promise<AppContext> {
   return { config, rest, pool, tripCache, userId, authenticated: true };
 }
 
+/**
+ * Diagnostic only: repeat the /api/user call and log what Wanderlog actually
+ * returned (status, a few headers, start of body) so a 403 can be told apart:
+ * bad cookie (JSON error) vs. Cloudflare bot protection (HTML challenge page).
+ * Never logs the cookie itself.
+ */
+async function logLoginProbe(cookieRaw: string, env: Env): Promise<void> {
+  try {
+    let cookie: string;
+    try {
+      cookie = normalizeCookie(cookieRaw);
+    } catch (e) {
+      console.error(
+        `[wanderdog] probe: cookie format rejected (len=${cookieRaw.length}, starts="${cookieRaw.slice(0, 4)}"): ${(e as Error).message}`,
+      );
+      return;
+    }
+    const base = env.WANDERLOG_BASE_URL ?? "https://wanderlog.com";
+    const resp = await fetch(`${base}/api/user`, {
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        Cookie: cookie,
+        Origin: base,
+        Referer: `${base}/`,
+        "User-Agent": env.WANDERLOG_USER_AGENT ?? DEFAULT_UA,
+      },
+    });
+    const body = (await resp.text()).slice(0, 300).replace(/\s+/g, " ");
+    console.error(
+      `[wanderdog] probe: /api/user -> ${resp.status} server=${resp.headers.get("server")} ` +
+        `cf-mitigated=${resp.headers.get("cf-mitigated")} content-type=${resp.headers.get("content-type")} ` +
+        `cookie-len=${cookie.length} body="${body}"`,
+    );
+  } catch (e) {
+    console.error(`[wanderdog] probe failed: ${(e as Error).message}`);
+  }
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -104,6 +142,8 @@ export default {
       const msg = err instanceof WanderlogError ? err.toUserMessage() : (err as Error).message;
       const status = loginFailureStatus(err);
       const label = status === 403 ? "Authentication failed" : "Wanderlog unavailable";
+      console.error(`[wanderdog] login failed: ${(err as Error).name}: ${msg}`);
+      await logLoginProbe(cookie, env);
       return rpcError(status, `${label}: ${msg}`);
     }
 
